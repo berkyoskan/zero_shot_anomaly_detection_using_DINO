@@ -47,16 +47,11 @@ class SAM2Segmenter(BaseSegmenter):
         """
         Run SAM2 and return a single foreground mask.
 
-        Current behavior:
         - Convert image to PIL.
         - Use a single bounding box covering the whole image as prompt.
         - Run SAM2, post-process masks to image resolution.
         - Threshold and union all masks into one boolean (H, W) array.
 
-        You can later refine this by:
-        - replacing the full-image box with a tighter box around the object of interest
-          (e.g., from DINOv3 anomaly heatmap or a detector),
-        - or adding point prompts if you have them.
         """
         # Ensure PIL image
         if isinstance(image, np.ndarray):
@@ -80,8 +75,7 @@ class SAM2Segmenter(BaseSegmenter):
             # multimask_output=False → one mask per box
             outputs = self.model(**inputs, multimask_output=False)
 
-        # Post-process masks to original resolution (HF SAM2 docs style)
-        # returns a list over batch; we only have one image, so [0]
+        # Post-process masks to original resolution
         masks = self.processor.post_process_masks(
             outputs.pred_masks.cpu(),  # (B, num_masks, H', W')
             inputs["original_sizes"],
