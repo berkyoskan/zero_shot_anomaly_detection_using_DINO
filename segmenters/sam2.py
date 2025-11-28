@@ -38,10 +38,6 @@ class SAM2Segmenter(BaseSegmenter):
         else:
             self.device = torch.device("cpu")
 
-        # we keep this just in case you later want to combine SAM2 with some detector
-        self.text_prompt = text_prompt
-        self.mask_threshold = mask_threshold
-
         # Load SAM2 model + processor
         self.model = Sam2Model.from_pretrained(model_name).to(self.device)
         self.model.eval()
