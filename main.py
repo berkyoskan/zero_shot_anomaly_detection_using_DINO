@@ -10,12 +10,20 @@ from dataset.dataloader import load_mvtec
 from models.model_bank_knn import PatchKNNDetector
 from evaluation.anomaly_evaluator import AnomalyEvaluator 
 
-def main():
+def main(
+    category: str = "bottle",
+    root: str | None = None,
+    backbone_name: str = "dinov2_small",
+    use_sam3: bool = True,
+    return_results: bool = False,
+    backbone_model=None,
+    segmenter_obj=None,
+    n_ref: int = 1,
+):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
     # 1. Setup
-    category = "bottle"
-    root = "Desktop/datasets/MVTecAD/archive" 
+    root = root or os.path.join("dataset", "mvtec_anomaly_detection")
     train_paths, test_paths = load_mvtec(category=category, root=root)
     test_paths = test_paths[::20]
     train_paths = train_paths[::20]
@@ -26,8 +34,12 @@ def main():
     evaluator = AnomalyEvaluator(pixel_subsample_rate=0.01, compute_pro=False)
 
     # 3. Model Init
-    segmenter = SAM3Segmenter(text_prompt=category, device=device)
-    backbone = get_backbone("dinov2_small")
+    segmenter = segmenter_obj
+    if segmenter is None and use_sam3:
+        segmenter = SAM3Segmenter(text_prompt=category, device=device)
+
+    backbone = backbone_model or get_backbone(backbone_name)
+
     model = PatchKNNDetector(
         backbone=backbone,
         segmenter=segmenter,
@@ -35,8 +47,8 @@ def main():
         k_neighbors=1,
     )
 
-    print("Fitting model...")
-    model.fit(train_paths, n_ref=1)
+    print(f"Fitting model... (backbone={backbone_name}, sam3={use_sam3})")
+    model.fit(train_paths, n_ref=n_ref)
 
     # 4. Evaluation Loop
     print(f"Starting evaluation on {len(test_paths)} images...")
@@ -86,5 +98,20 @@ def main():
         #print(f"PRO Score:     {results['pixel_pro']:.4f}") 
     print("="*40)
 
+    return results if return_results else None
+
 if __name__ == "__main__":
-    main()
+    # Allow env overrides for quick CLI use
+    category = os.environ.get("MVTec_CATEGORY", "bottle")
+    root = os.environ.get("MVTec_ROOT", None)
+    backbone_name = os.environ.get("BACKBONE_NAME", "dinov2_small")
+    use_sam3_env = os.environ.get("USE_SAM3", "1").lower()
+    use_sam3 = use_sam3_env not in {"0", "false", "no"}
+
+    main(
+        category=category,
+        root=root,
+        backbone_name=backbone_name,
+        use_sam3=use_sam3,
+        n_ref=int(os.environ.get("N_REF", 1)),
+    )

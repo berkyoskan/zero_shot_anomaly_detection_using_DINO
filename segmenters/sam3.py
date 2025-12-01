@@ -10,11 +10,7 @@ from segmenters import BaseSegmenter
 
 class SAM3Segmenter(BaseSegmenter):
     """
-    SAM3 wrapper using a text prompt of object type (screw, grid, leather, bottle etc).
-
-    - Uses Sam3Model (link - https://huggingface.co/facebook/sam3)
-    - Segments all instances matching the text prompt
-    - Returns a single boolean mask
+    SAM3 wrapper using a text prompt of object type
     """
 
     def __init__(
@@ -23,8 +19,7 @@ class SAM3Segmenter(BaseSegmenter):
         model_name: str = "facebook/sam3",
         device: str = "cuda",
         score_threshold: float = 0.5,
-        mask_threshold: float = 0.5,
-    ) -> None:
+        mask_threshold: float = 0.5 ):
         """
         Args:
             text_prompt: stuff we want to segment.
@@ -70,7 +65,7 @@ class SAM3Segmenter(BaseSegmenter):
         with torch.no_grad():
             outputs = self.model(**inputs)
 
-        # 3) Post-process instance segmentation (HF example style)
+        # Post-process instance segmentation (HF example style)
         target_sizes = inputs.get("original_sizes").tolist()
         results = self.processor.post_process_instance_segmentation(
             outputs,
@@ -84,7 +79,7 @@ class SAM3Segmenter(BaseSegmenter):
 
         # If SAM completely fails we keep everything
         if masks is None or masks.numel() == 0:
-            H, W = pil_image.size[1], pil_image.size[0]  # PIL: (W, H)
+            H, W = pil_image.size[1], pil_image.size[0] 
             return np.ones((H, W), dtype=bool)
 
         if scores is not None:
@@ -96,7 +91,7 @@ class SAM3Segmenter(BaseSegmenter):
 
         # check if mask passes mask treshold
         masks_bin = (masks > self.mask_threshold)
-        combined = masks_bin.any(dim=0)  # (H, W)
+        combined = masks_bin.any(dim=0)
         full_mask = combined.cpu().numpy().astype(bool)
 
         return full_mask

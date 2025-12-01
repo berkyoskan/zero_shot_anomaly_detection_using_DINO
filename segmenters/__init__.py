@@ -2,8 +2,9 @@ from segmenters.base_segmenter import BaseSegmenter
 from segmenters.sam3 import SAM3Segmenter
 
 
+
 """
-Registry patter style - when you add new segmenter - add it here together with the name
+Model registry for segmenters
 """
 _SEGMENTERS = {
     "sam3": SAM3Segmenter,

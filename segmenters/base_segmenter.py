@@ -1,4 +1,3 @@
-# segmenters/sam2_segmenter.py
 
 import numpy as np
 
