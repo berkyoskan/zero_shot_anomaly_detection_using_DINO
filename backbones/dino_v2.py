@@ -1,6 +1,8 @@
 
 import timm
-
+"""
+DinoV2 backbones
+"""
 def build_dinov2_small(**kwargs):
 
     model = timm.create_model('vit_small_patch14_reg4_dinov2.lvd142m',
