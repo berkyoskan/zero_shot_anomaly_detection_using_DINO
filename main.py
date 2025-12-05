@@ -4,6 +4,8 @@ import os
 import cv2
 import numpy as np
 import torch
+
+from segmenters import PCASegmenter
 from segmenters.sam3 import SAM3Segmenter
 from backbones import get_backbone
 from dataset.dataloader import load_mvtec
@@ -13,8 +15,10 @@ from evaluation.anomaly_evaluator import AnomalyEvaluator
 def main(
     category: str = "bottle",
     root: str | None = None,
-    backbone_name: str = "dinov2_small",
+    backbone_name: str = "dinov3_small",
     use_sam3: bool = True,
+    use_pca: bool = False,
+    pca_backbone_name: str | None = None,
     return_results: bool = False,
     backbone_model=None,
     segmenter_obj=None,
@@ -25,18 +29,26 @@ def main(
     # 1. Setup
     root = root or os.path.join("dataset", "mvtec_anomaly_detection")
     train_paths, test_paths = load_mvtec(category=category, root=root)
-    test_paths = test_paths[::20]
-    train_paths = train_paths[::20]
+    test_paths = test_paths[::5]
+    train_paths = train_paths[::5]
     print(f"{category}: {len(train_paths)} train, {len(test_paths)} test images")
 
     # 2. Initialize Evaluator with PRO support
-    # We set compute_pro=True so we can calculate the region overlap
     evaluator = AnomalyEvaluator(pixel_subsample_rate=0.01, compute_pro=False)
 
     # 3. Model Init
     segmenter = segmenter_obj
-    if segmenter is None and use_sam3:
-        segmenter = SAM3Segmenter(text_prompt=category, device=device)
+    if segmenter is None:
+        if use_pca:
+            pca_backbone = pca_backbone_name or backbone_name
+            segmenter = PCASegmenter(backbone_name=pca_backbone, device=device)
+            print(f"Using PCA segmenter (backbone={pca_backbone})")
+        elif use_sam3:
+            segmenter = SAM3Segmenter(text_prompt=category, device=device)
+            print("Using SAM3 segmenter")
+        else:
+            print("No segmenter selected; using full-image foreground.")
+        
 
     backbone = backbone_model or get_backbone(backbone_name)
 
@@ -101,17 +113,23 @@ def main(
     return results if return_results else None
 
 if __name__ == "__main__":
-    # Allow env overrides for quick CLI use
+
+
     category = os.environ.get("MVTec_CATEGORY", "bottle")
     root = os.environ.get("MVTec_ROOT", None)
-    backbone_name = os.environ.get("BACKBONE_NAME", "dinov2_small")
-    use_sam3_env = os.environ.get("USE_SAM3", "1").lower()
+    backbone_name = os.environ.get("BACKBONE_NAME", "dinov3_small")
+    use_sam3_env = os.environ.get("USE_SAM3", "0").lower()
     use_sam3 = use_sam3_env not in {"0", "false", "no"}
+    use_pca_env = os.environ.get("USE_PCA", "1").lower()
+    use_pca = use_pca_env in {"1", "true", "yes"}
+    pca_backbone_name = os.environ.get("PCA_BACKBONE", None)
 
     main(
         category=category,
         root=root,
         backbone_name=backbone_name,
         use_sam3=use_sam3,
+        use_pca=use_pca,
+        pca_backbone_name=pca_backbone_name,
         n_ref=int(os.environ.get("N_REF", 1)),
     )

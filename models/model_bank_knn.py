@@ -103,7 +103,7 @@ class PatchKNNDetector:
         return image, anomaly_map, image_score
 
 
-    def _load_image(path):
+    def _load_image(self, path):
         bgr = cv2.imread(path, cv2.IMREAD_COLOR)
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         return rgb
