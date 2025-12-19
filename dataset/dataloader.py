@@ -4,7 +4,7 @@ from typing import List, Tuple
 from anomalib.data import MVTec, MVTecAD
 from anomalib.data.datasets.image import MVTecDataset
 """Loading logic :
-   Download MVTech AD dataset from the website and place it in data folder (Anomalib installation doesnt work)
+   Download MVTech AD dataset from the website and place it in data folder (sorry Anomalib installation doesnt work)
 
 """
 

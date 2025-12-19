@@ -26,17 +26,17 @@ def main(
 ):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
-    # 1. Setup
+    # Setup
     root = root or os.path.join("dataset", "mvtec_anomaly_detection")
     train_paths, test_paths = load_mvtec(category=category, root=root)
     test_paths = test_paths[::5]
     train_paths = train_paths[::5]
     print(f"{category}: {len(train_paths)} train, {len(test_paths)} test images")
 
-    # 2. Initialize Evaluator with PRO support
+    # Intiializing the evaluator
     evaluator = AnomalyEvaluator(pixel_subsample_rate=0.01, compute_pro=False)
 
-    # 3. Model Init
+    # Initializing the model
     segmenter = segmenter_obj
     if segmenter is None:
         if use_pca:
@@ -59,17 +59,16 @@ def main(
         k_neighbors=1,
     )
 
-    print(f"Fitting model... (backbone={backbone_name}, sam3={use_sam3})")
+    print(f"Fitting model(backbone={backbone_name}, sam3={use_sam3})")
     model.fit(train_paths, n_ref=n_ref)
 
-    # 4. Evaluation Loop
+    # Evaluation loop
     print(f"Starting evaluation on {len(test_paths)} images...")
 
     for i, path in enumerate(test_paths):
-        # Predict
         image, amap, score = model.predict(path)
 
-        # Ground Truth Logic
+        # Ground Truth
         is_anomaly = 0 if "good" in path else 1
         
         if is_anomaly == 0:

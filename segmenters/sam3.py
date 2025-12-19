@@ -10,7 +10,7 @@ from segmenters import BaseSegmenter
 
 class SAM3Segmenter(BaseSegmenter):
     """
-    SAM3 wrapper using a text prompt of object type
+    SAM3 wrapper using a text prompt of object
     """
 
     def __init__(

@@ -15,9 +15,6 @@ from utils.visualize import visualize_segmentation
 
 
 class PatchKNNDetector:
-    """
-    Model bank (Anomaly Dino) style model :
-    """
 
     def __init__(self, backbone, segmenter = None, device = "cuda", k_neighbors = 1):
 
